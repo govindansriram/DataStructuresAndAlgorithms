@@ -3,16 +3,20 @@ from LinkedLists.Node import Node
 
 class DoublyLinkedList:
 
-    def __init__(self, data):
-        self.__length = 1
-        self.__head = Node(data)
-        self.__tail = self.__head
+    def __init__(self):
+        self.__length = 0
+
+        self.__ghost_head = Node(None)
+        self.__ghost_tail = Node(None)
+
+        self.__ghost_head.set_right_node(self.__ghost_tail)
+        self.__ghost_tail.set_left_node(self.__ghost_head)
 
     def get_head(self) -> Node:
-        return self.__head
+        return self.__ghost_head.get_right_node()
 
     def get_tail(self) -> Node:
-        return self.__tail
+        return self.__ghost_tail.get_left_node()
 
     def get_length(self) -> int:
         return self.__length
@@ -20,21 +24,79 @@ class DoublyLinkedList:
     def insert_at_head(self,
                        data):
 
+        head_node = self.__ghost_head.get_right_node()
         new_node = Node(data)
-        new_node.set_right_node(self.__head)
-        self.__head.set_left_node(new_node)
-        self.__head = new_node
-
+        new_node.set_right_node(head_node)
+        head_node.set_left_node(new_node)
+        self.__ghost_head.set_right_node(new_node)
+        new_node.set_left_node(self.__ghost_head)
         self.__length += 1
+
+    def cut_tail(self):
+        if self.get_length() > 0:
+            tail_node = self.__ghost_tail.get_left_node()
+            new_tail = tail_node.get_left_node()
+            new_tail.set_right_node(self.__ghost_tail)
+            self.__ghost_tail.set_left_node(new_tail)
+
+            del tail_node
+            self.__length -= 1
+        else:
+            raise Exception("LinkedList is empty, unable to delete tail")
+
+    def decapitate(self):
+        if self.get_length() > 0:
+            head_node = self.__ghost_head.get_right_node()
+            new_head = head_node.get_right_node()
+            new_head.set_left_node(self.__ghost_head)
+            self.__ghost_head.set_right_node(new_head)
+
+            del head_node
+            self.__length -= 1
+        else:
+            raise Exception("LinkedList is empty, unable to delete head")
+
+    def cut_at_index(self,
+                     index):
+
+        if index == 0:
+            self.decapitate()
+
+        elif index >= self.__length - 1:
+            self.cut_tail()
+
+        else:
+            middle = self.__length // 2
+
+            if index <= middle:
+                idx = 0
+                curr_node = self.get_head()
+                for curr_idx, curr_node in enumerate(self.iterate_forward(self.__length)):
+                    if idx + curr_idx >= index:
+                        break
+
+            if index > middle:
+                idx = self.__length - 1
+                for curr_idx, curr_node in enumerate(self.iterate_backward(self.__length)):
+                    if idx - curr_idx <= index:
+                        break
+
+            left_curr = curr_node.get_left_node()
+            right_curr = curr_node.get_right_node()
+            left_curr.set_right_node(right_curr)
+            right_curr.set_left_node(left_curr)
+            del curr_node
+            self.__length -= 1
 
     def insert_at_tail(self,
                        data):
 
+        tail_node = self.__ghost_tail.get_left_node()
         new_node = Node(data)
-        new_node.set_left_node(self.__tail)
-        self.__tail.set_right_node(new_node)
-        self.__tail = new_node
-
+        new_node.set_left_node(tail_node)
+        tail_node.set_right_node(new_node)
+        self.__ghost_tail.set_left_node(new_node)
+        new_node.set_right_node(self.__ghost_tail)
         self.__length += 1
 
     def insert_at_index(self,
@@ -53,49 +115,52 @@ class DoublyLinkedList:
 
             if index <= middle:
                 idx = 0
-                curr_node = self.__head
-
-                for curr_idx, curr_node in enumerate(self.iterate_forward()):
+                for curr_idx, curr_node in enumerate(self.iterate_forward(self.__length)):
                     if idx + curr_idx >= index:
                         break
 
-                left_curr = curr_node.get_left_node()
-                left_curr.set_right_node(new_node)
-                new_node.set_right_node(curr_node)
-                new_node.set_left_node(left_curr)
-                curr_node.set_left_node(new_node)
-
             else:
                 idx = self.__length - 1
-
-                for curr_idx, curr_node in enumerate(self.iterate_backward()):
+                for curr_idx, curr_node in enumerate(self.iterate_backward(self.__length)):
                     if idx - curr_idx <= index:
                         break
 
-                left_curr = curr_node.get_left_node()
-                left_curr.set_right_node(new_node)
-                new_node.set_right_node(curr_node)
-                new_node.set_left_node(left_curr)
-                curr_node.set_left_node(new_node)
+            left_curr = curr_node.get_left_node()
+            left_curr.set_right_node(new_node)
+            new_node.set_right_node(curr_node)
+            new_node.set_left_node(left_curr)
+            curr_node.set_left_node(new_node)
 
             self.__length += 1
 
-    def iterate_forward(self):
-        curr_node = self.__head
+    def iterate_forward(self,
+                        link_count,
+                        start_node=None):
 
-        while True:
+        curr_node = start_node if start_node is not None else self.get_head()
+
+        link_step = 0
+
+        while link_step < link_count:
             yield curr_node
-            if curr_node.get_right_node() is None:
+            if curr_node.get_right_node() == self.__ghost_tail:
                 break
 
             curr_node = curr_node.get_right_node()
+            link_step += 1
 
-    def iterate_backward(self):
-        curr_node = self.__tail
+    def iterate_backward(self,
+                         link_count,
+                         start_node=None):
 
-        while True:
+        curr_node = start_node if start_node is not None else self.get_tail()
+
+        link_step = 0
+
+        while link_step < link_count:
             yield curr_node
-            if curr_node.get_left_node() is None:
+            if curr_node.get_left_node() == self.__ghost_head:
                 break
 
             curr_node = curr_node.get_left_node()
+            link_step += 1

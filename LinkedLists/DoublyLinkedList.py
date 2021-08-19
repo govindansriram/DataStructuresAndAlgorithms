@@ -67,6 +67,7 @@ class DoublyLinkedList:
 
         else:
             middle = self.__length // 2
+            curr_node = None
 
             if index <= middle:
                 idx = 0
@@ -112,6 +113,7 @@ class DoublyLinkedList:
         else:
             middle = self.__length // 2
             new_node = Node(data)
+            curr_node = None
 
             if index <= middle:
                 idx = 0
@@ -132,6 +134,66 @@ class DoublyLinkedList:
             curr_node.set_left_node(new_node)
 
             self.__length += 1
+
+    def chain_list_at_head(self,
+                           new_list):
+
+        self.__length += new_list.get_length()
+
+        new_head = new_list.get_head()
+        new_tail = new_list.get_tail()
+
+        new_tail.set_right_node(self.get_head())
+        self.get_head().set_left_node(new_tail)
+
+        self.__ghost_head.set_right_node(new_head)
+        new_head.set_left_node(self.__ghost_head)
+
+    def chain_list_at_tail(self, new_list):
+
+        self.__length += new_list.get_length()
+
+        new_head = new_list.get_head()
+        new_tail = new_list.get_tail()
+
+        new_head.set_left_node(self.get_tail())
+        self.get_tail().set_right_node(new_head)
+
+        self.__ghost_tail.set_left_node(new_tail)
+        new_tail.set_right_node(self.__ghost_tail)
+
+    def chain_list_at_index(self,
+                            new_list,
+                            index):
+
+        if index == 0:
+            self.chain_list_at_head(new_list)
+        elif index > self.__length - 1:
+            self.chain_list_at_tail(new_list)
+        else:
+            middle = self.__length // 2
+            curr_node = None
+
+            if index <= middle:
+                idx = 0
+                for curr_idx, curr_node in enumerate(self.iterate_forward(self.__length)):
+                    if idx + curr_idx >= index:
+                        break
+
+            else:
+                idx = self.__length - 1
+                for curr_idx, curr_node in enumerate(self.iterate_backward(self.__length)):
+                    if idx - curr_idx <= index:
+                        break
+
+            left_curr = curr_node.get_left_node()
+            new_head = new_list.get_head()
+            new_tail = new_list.get_tail()
+
+            left_curr.set_right_node(new_head)
+            new_head.set_left_node(left_curr)
+            new_tail.set_right_node(curr_node)
+            curr_node.set_left_node(new_tail)
 
     def iterate_forward(self,
                         link_count,
